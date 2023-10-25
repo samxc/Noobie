@@ -1,48 +1,42 @@
 import 'package:flutter/material.dart';
 
-void main() => runApp(const MyApp());
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    const title = 'Noobie';
-
-    return MaterialApp(
-      title: title,
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('you have been Hacked!'),
-        ),
-        body: const Center(
-          child: DialogExample(),
-        ),
-      ),
-    );
-  }
+void main() {
+  runApp(const TabBarDemo());
 }
 
-class DialogExample extends StatelessWidget {
-  const DialogExample({super.key});
+class TabBarDemo extends StatelessWidget {
+  const TabBarDemo({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return TextButton(
-      onPressed: () => showDialog<String>(
-        context: context,
-        builder: (BuildContext context) => AlertDialog(
-          title: const Text('AlertDialog description'),
-          content: const Text('Oh no , you have been hacked!! please report'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.pop(context, 'Cancel'),
-              child: const Text('Cancel'),
-            )
-          ],
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        primaryColor: Colors.blueGrey,
+      ),
+      home: DefaultTabController(
+        length: 4,
+        child: Scaffold(
+          appBar: AppBar(
+            bottom: const TabBar(
+              tabs: [
+                Tab(icon: Icon(Icons.image)),
+                Tab(icon: Icon(Icons.book)),
+                Tab(icon: Icon(Icons.phone)),
+              ],
+            ),
+            title: const Text('Tabs Demo'),
+          ),
+          body: const TabBarView(
+            children: [
+              Icon(Icons.directions_car),
+              Icon(Icons.directions_transit),
+              Icon(Icons.directions_bike),
+            ],
+          ),
         ),
       ),
-      child: const Text('Show Dialog'),
     );
   }
 }

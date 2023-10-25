@@ -22,15 +22,15 @@ dev_dependencies:
   flutter_lints: ^2.0.0
 
 flutter:
-  uses-material-design: true
   fonts:
     - family: Raleway
-      fonts:
+      font:
         - asset: fonts/Raleway-Regular.ttf
         - asset: fonts/Raleway-Italic.ttf
           style: italic
-    - family: RobotoMono
+    - family:
       fonts:
         - asset: fonts/RobotoMono-Regular.ttf
         - asset: fonts/RobotoMono-Bold.ttf
           weight: 700
+  uses-material-design: true

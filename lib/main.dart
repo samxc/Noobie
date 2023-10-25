@@ -9,6 +9,27 @@ class TabBarDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp();
+    return MaterialApp(
+      title: 'Noobie',
+      theme: ThemeData(fontFamily: 'Raleway'),
+      home: MyHomePage(),
+    );
+  }
+}
+
+class MyHomePage extends StatelessWidget {
+  const MyHomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Noobie')),
+      body: const Center(
+        child: Text(
+          'Hello, Testing for an application is here!!',
+          style: TextStyle(fontFamily: 'RobotoMono'),
+        ),
+      ),
+    );
   }
 }

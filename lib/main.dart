@@ -12,54 +12,37 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: title,
       home: Scaffold(
-          appBar: AppBar(
-            title: const Text(title),
-            centerTitle: true,
-            toolbarHeight: 50,
-          ),
-          body: CustomScrollView(
-            slivers: <Widget>[
-              const SliverAppBar(
-                pinned: true,
-                expandedHeight: 250.0,
-                flexibleSpace: FlexibleSpaceBar(
-                  title: Text('Welcome to OASIS'),
-                ),
-              ),
-              SliverGrid(
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 200.0,
-                  mainAxisSpacing: 10.0,
-                  crossAxisSpacing: 10.0,
-                  childAspectRatio: 4.0,
-                ),
-                delegate: SliverChildBuilderDelegate(
-                  (BuildContext context, int index) {
-                    return Container(
-                      alignment: Alignment.center,
-                      color: Colors.teal[100 * (index % 9)],
-                      child: Text('Grid Item $index'),
-                    );
-                  },
-                  childCount: 8,
-                ),
-              ),
-              SliverFixedExtentList(
-                itemExtent: 50.0,
-                delegate: SliverChildBuilderDelegate(
-                  (BuildContext context, int index) {
-                    return Container(
-                      height: 450,
-                      alignment: Alignment.center,
-                      color: Colors.lightBlue[100 * (index % 9)],
-                      child: Text('List Item $index'),
-                    );
-                  },
-                  childCount: 5,
-                ),
-              ),
-            ],
-          )),
+        appBar: AppBar(
+          title: const Text('you have been Hacked!'),
+        ),
+        body: const Center(
+          child: DialogExample(),
+        ),
+      ),
+    );
+  }
+}
+
+class DialogExample extends StatelessWidget {
+  const DialogExample({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: () => showDialog<String>(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('AlertDialog description'),
+          content: const Text('Oh no , you have been hacked!! please report'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'Cancel'),
+              child: const Text('Cancel'),
+            )
+          ],
+        ),
+      ),
+      child: const Text('Show Dialog'),
     );
   }
 }

@@ -1,34 +1,53 @@
+import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  runApp(const TabBarDemo());
+  runApp(MyApp());
 }
 
-class TabBarDemo extends StatelessWidget {
-  const TabBarDemo({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Noobie',
-      theme: ThemeData(fontFamily: 'Raleway'),
-      home: MyHomePage(),
+    return ChangeNotifierProvider(
+      create: (context) => MyAppState(),
+      child: MaterialApp(
+        title: 'Namer App',
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
+        ),
+        home: MyHomePage(),
+      ),
     );
   }
 }
 
-class MyHomePage extends StatelessWidget {
-  const MyHomePage({super.key});
+class MyAppState extends ChangeNotifier {
+  var current = WordPair.random();
+}
 
+class MyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Noobie')),
-      body: const Center(
-        child: Text(
-          'Hello, Testing for an application is here!!',
-          style: TextStyle(fontFamily: 'RobotoMono'),
-        ),
+      body: Column(
+        children: [
+          Text('A random AWESOME idea:'),
+          Text(appState.current.asLowerCase),
+
+          // ↓ Add this.
+          ElevatedButton(
+            onPressed: () {
+              print('button pressed!');
+            },
+            child: Text('Next'),
+          ),
+        ],
       ),
     );
   }

@@ -1,0 +1,16 @@
+[Unit]
+Description=Noobie PocketBase backend
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/noobie/backend
+Environment=NOOBIE_DATA_DIR=/opt/noobie/backend/data
+EnvironmentFile=-/opt/noobie/backend/.env
+ExecStart=/opt/noobie/backend/noobie-backend serve --http=0.0.0.0:8091
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

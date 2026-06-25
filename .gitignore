@@ -32,6 +32,12 @@ migrate_working_dir/
 .pub/
 /build/
 
+# Noobie backend local runtime
+/backend/noobie
+/backend/data/
+/backend/pb_data/
+/backend/backups/
+
 # Symbolication related
 app.*.symbols
 

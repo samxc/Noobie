@@ -1,0 +1,13 @@
+services:
+  noobie-backend:
+    build: .
+    container_name: noobie-backend
+    restart: unless-stopped
+    ports:
+      - "8091:8091"
+    environment:
+      NOOBIE_DATA_DIR: /app/data
+      NOOBIE_IMPORT_KEY: ${NOOBIE_IMPORT_KEY:-}
+      DOMAIN_API_TOKEN: ${DOMAIN_API_TOKEN:-}
+    volumes:
+      - ./data:/app/data

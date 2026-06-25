@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
@@ -1560,40 +1561,324 @@ class GuideCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Panel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(item.icon, color: AppColors.clay),
-              const Spacer(),
-              IconButton(
-                tooltip: saved ? 'Remove saved guide' : 'Save guide',
-                onPressed: () => onToggleSaved(item.id),
-                icon: Icon(saved ? Icons.bookmark : Icons.bookmark_border),
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => showGuideDetail(context, item),
+      child: Panel(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(item.icon, color: AppColors.clay),
+                const Spacer(),
+                IconButton(
+                  tooltip: saved ? 'Remove saved guide' : 'Save guide',
+                  onPressed: () => onToggleSaved(item.id),
+                  icon: Icon(saved ? Icons.bookmark : Icons.bookmark_border),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              item.title,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              item.description,
+              style: const TextStyle(color: AppColors.slate, height: 1.35),
+            ),
+            const Spacer(),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    item.category,
+                    style: const TextStyle(
+                      color: AppColors.inkBlue,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ),
+                const Icon(Icons.open_in_full,
+                    color: AppColors.slate, size: 18),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> showGuideDetail(BuildContext context, GuideItem item) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    backgroundColor: AppColors.paper,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+    ),
+    builder: (_) => GuideDetailSheet(item: item),
+  );
+}
+
+class GuideDetailSheet extends StatefulWidget {
+  const GuideDetailSheet({super.key, required this.item});
+
+  final GuideItem item;
+
+  @override
+  State<GuideDetailSheet> createState() => _GuideDetailSheetState();
+}
+
+class _GuideDetailSheetState extends State<GuideDetailSheet> {
+  final FlutterTts tts = FlutterTts();
+  var speaking = false;
+
+  GuideDetailContent get detail => guideDetailFor(widget.item);
+
+  @override
+  void initState() {
+    super.initState();
+    tts.setCompletionHandler(() {
+      if (mounted) setState(() => speaking = false);
+    });
+    tts.setCancelHandler(() {
+      if (mounted) setState(() => speaking = false);
+    });
+  }
+
+  @override
+  void dispose() {
+    tts.stop();
+    super.dispose();
+  }
+
+  Future<void> toggleSpeech() async {
+    if (speaking) {
+      await tts.stop();
+      setState(() => speaking = false);
+      return;
+    }
+    await tts.setLanguage('en-AU');
+    await tts.setSpeechRate(0.45);
+    await tts.speak(detail.speechText(widget.item));
+    setState(() => speaking = true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.92,
+      minChildSize: 0.55,
+      maxChildSize: 0.97,
+      builder: (context, controller) {
+        return ListView(
+          controller: controller,
+          padding: const EdgeInsets.fromLTRB(22, 18, 22, 28),
+          children: [
+            Row(
+              children: [
+                Icon(item.icon, color: AppColors.clay),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    item.category,
+                    style: const TextStyle(
+                      color: AppColors.inkBlue,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Close guide',
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              item.title,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: AppColors.coal,
+                    fontWeight: FontWeight.w900,
+                  ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              item.description,
+              style: const TextStyle(
+                  color: AppColors.slate, height: 1.45, fontSize: 16),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                FilledButton.icon(
+                  onPressed: toggleSpeech,
+                  icon: Icon(speaking ? Icons.stop : Icons.volume_up_outlined),
+                  label: Text(speaking ? 'Stop listening' : 'Listen'),
+                ),
+                if (item.officialUrl.isNotEmpty)
+                  OutlinedButton.icon(
+                    onPressed: () => openExternal(item.officialUrl),
+                    icon: const Icon(Icons.verified_outlined),
+                    label: const Text('Official source'),
+                  ),
+              ],
+            ),
+            if (item.body.isNotEmpty) ...[
+              const SectionTitle(title: 'What this means'),
+              DetailBlock(text: item.body),
+            ],
+            if (detail.images.isNotEmpty) ...[
+              const SectionTitle(title: 'What it looks like'),
+              DetailImageStrip(images: detail.images),
+            ],
+            for (final section in detail.sections) ...[
+              SectionTitle(title: section.title),
+              DetailBlock(text: section.body),
+            ],
+            if (detail.warnings.isNotEmpty) ...[
+              const SectionTitle(title: 'Common mistakes'),
+              for (final warning in detail.warnings)
+                DetailBullet(icon: Icons.warning_amber_outlined, text: warning),
+            ],
+            if (detail.checklist.isNotEmpty) ...[
+              const SectionTitle(title: 'Do this'),
+              for (final step in detail.checklist)
+                DetailBullet(icon: Icons.check_circle_outline, text: step),
+            ],
+            if (detail.links.isNotEmpty) ...[
+              const SectionTitle(title: 'Useful links'),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  for (final link in detail.links)
+                    OutlinedButton.icon(
+                      onPressed: () => openExternal(link.url),
+                      icon: const Icon(Icons.open_in_new),
+                      label: Text(link.label),
+                    ),
+                ],
               ),
             ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            item.title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            item.description,
-            style: const TextStyle(color: AppColors.slate, height: 1.35),
-          ),
-          const Spacer(),
-          Text(
-            item.category,
-            style: const TextStyle(
-              color: AppColors.inkBlue,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0,
+            if (detail.attribution.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              Text(
+                detail.attribution,
+                style: const TextStyle(
+                    color: AppColors.slate, fontSize: 12, height: 1.35),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+class DetailBlock extends StatelessWidget {
+  const DetailBlock({super.key, required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Panel(
+      child: Text(
+        text,
+        style:
+            const TextStyle(color: AppColors.coal, height: 1.5, fontSize: 15),
+      ),
+    );
+  }
+}
+
+class DetailImageStrip extends StatelessWidget {
+  const DetailImageStrip({super.key, required this.images});
+
+  final List<GuideImage> images;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 220,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: images.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (context, index) {
+          final image = images[index];
+          return SizedBox(
+            width: 330,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.network(
+                    image.url,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                        Container(color: AppColors.mist),
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      color: AppColors.coal.withValues(alpha: 0.74),
+                      child: Text(
+                        image.caption,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class DetailBullet extends StatelessWidget {
+  const DetailBullet({super.key, required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppColors.clay, size: 21),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(height: 1.4, color: AppColors.coal),
             ),
           ),
         ],
@@ -2030,24 +2315,31 @@ class AppGuide {
     required this.id,
     required this.title,
     required this.summary,
+    required this.body,
     required this.category,
     required this.categoryLabel,
+    required this.officialUrl,
   });
 
   final String id;
   final String title;
   final String summary;
+  final String body;
   final String category;
   final String categoryLabel;
+  final String officialUrl;
 
   GuideItem toGuideItem() {
     return GuideItem(
       id: id,
       title: title,
       description: summary,
+      body: body,
       category: categoryLabel.isEmpty
           ? category.toUpperCase()
           : categoryLabel.toUpperCase(),
+      rawCategory: category,
+      officialUrl: officialUrl,
       icon: categoryIcon(category),
     );
   }
@@ -2058,8 +2350,10 @@ class AppGuide {
       id: '${item['id'] ?? item.hashCode}',
       title: '${item['title'] ?? 'Guide'}',
       summary: '${item['summary'] ?? ''}',
+      body: '${item['body'] ?? ''}',
       category: '${item['category'] ?? ''}',
       categoryLabel: '${item['category_label'] ?? ''}',
+      officialUrl: '${item['official_url'] ?? ''}',
     );
   }
 }
@@ -2088,19 +2382,381 @@ class AssistantReply {
   }
 }
 
+class GuideDetailContent {
+  const GuideDetailContent({
+    required this.sections,
+    this.images = const [],
+    this.warnings = const [],
+    this.checklist = const [],
+    this.links = const [],
+    this.attribution = '',
+  });
+
+  final List<GuideSection> sections;
+  final List<GuideImage> images;
+  final List<String> warnings;
+  final List<String> checklist;
+  final List<GuideLink> links;
+  final String attribution;
+
+  String speechText(GuideItem item) {
+    return [
+      item.title,
+      item.description,
+      if (item.body.isNotEmpty) item.body,
+      for (final section in sections) '${section.title}. ${section.body}',
+      if (warnings.isNotEmpty) 'Common mistakes. ${warnings.join(". ")}',
+      if (checklist.isNotEmpty) 'Do this. ${checklist.join(". ")}',
+    ].join('. ');
+  }
+}
+
+class GuideSection {
+  const GuideSection({required this.title, required this.body});
+
+  final String title;
+  final String body;
+}
+
+class GuideImage {
+  const GuideImage({required this.url, required this.caption});
+
+  final String url;
+  final String caption;
+}
+
+class GuideLink {
+  const GuideLink({required this.label, required this.url});
+
+  final String label;
+  final String url;
+}
+
+GuideDetailContent guideDetailFor(GuideItem item) {
+  final key = item.rawCategory.isNotEmpty
+      ? item.rawCategory.toLowerCase()
+      : item.category.toLowerCase();
+  final title = item.title.toLowerCase();
+  if (key.contains('transport') ||
+      title.contains('transport') ||
+      title.contains('airport')) {
+    return transportGuideDetail;
+  }
+  if (key.contains('health') ||
+      title.contains('gp') ||
+      title.contains('oshc')) {
+    return healthGuideDetail;
+  }
+  if (key.contains('housing') ||
+      title.contains('bond') ||
+      title.contains('room') ||
+      title.contains('suburb')) {
+    return housingGuideDetail;
+  }
+  if (key.contains('work') || key.contains('resume') || title.contains('job')) {
+    return workGuideDetail;
+  }
+  if (key.contains('money') ||
+      title.contains('budget') ||
+      title.contains('bank')) {
+    return moneyGuideDetail;
+  }
+  if (key.contains('study') || title.contains('usi')) {
+    return studyGuideDetail;
+  }
+  if (key.contains('safety') ||
+      title.contains('scam') ||
+      title.contains('emergency')) {
+    return safetyGuideDetail;
+  }
+  return dailyLifeGuideDetail;
+}
+
+const transportGuideDetail = GuideDetailContent(
+  images: [
+    GuideImage(
+      url:
+          'https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Central_Railway_Station_Platforms_16_%26_17_Sydney_P1350337.jpg/960px-Central_Railway_Station_Platforms_16_%26_17_Sydney_P1350337.jpg',
+      caption: 'Sydney Trains platforms at Central station.',
+    ),
+    GuideImage(
+      url:
+          'https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Transport_NSW_liveried_%282589_ST%29%2C_operated_by_Sydney_Buses%2C_Bustech_VST_bodied_Scania_K280UB_on_Loftus_Street_in_Circular_Quay.jpg/960px-Transport_NSW_liveried_%282589_ST%29%2C_operated_by_Sydney_Buses%2C_Bustech_VST_bodied_Scania_K280UB_on_Loftus_Street_in_Circular_Quay.jpg',
+      caption: 'A Transport NSW bus near Circular Quay.',
+    ),
+    GuideImage(
+      url:
+          'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Sydney_Harbour_Bridge_from_Circular_Quay.jpg/960px-Sydney_Harbour_Bridge_from_Circular_Quay.jpg',
+      caption: 'Circular Quay is the main city ferry interchange.',
+    ),
+  ],
+  sections: [
+    GuideSection(
+      title: 'Cards and payment',
+      body:
+          'In NSW you can use an Opal card or many contactless American Express, Mastercard and Visa cards/devices. Use the same card, phone or watch to tap on and tap off. Do not tap on with your phone and tap off with the physical card, because the system treats them as different payment methods.',
+    ),
+    GuideSection(
+      title: 'How routes work',
+      body:
+          'Trains run by line and platform. Buses run by route number and direction, and some stops serve several routes. Ferries run by wharf and destination. Always check the destination board before boarding, because the same platform, bus stop or wharf can serve multiple services. Use the Trip Planner or live departures when you are new.',
+    ),
+    GuideSection(
+      title: 'Ferries and Circular Quay',
+      body:
+          'Circular Quay is the easiest starting point for Sydney ferries. Look for the wharf number and destination on the screens. Popular beginner ferry trips include Manly, Taronga Zoo, Parramatta River services and short harbour trips. Ferries can be crowded on weekends, events and sunset times, so arrive early and have a train or light rail backup.',
+    ),
+    GuideSection(
+      title: 'Fines and inspectors',
+      body:
+          'Transport officers can check whether you have a valid tap-on or ticket. If you forgot to tap on, used the wrong card, had a flat phone battery, or tapped with a concession you are not eligible for, you may be fined. If the reader was faulty or this was a genuine first mistake, keep evidence and use the official NSW fine review process.',
+    ),
+  ],
+  warnings: [
+    'Card clash: keeping several cards together can tap the wrong one.',
+    'Flat phone battery: if your phone dies, you may not be able to prove the same payment method.',
+    'Concession confusion: international students are not automatically eligible for every concession.',
+    'Open train gates do not mean the trip is free. You still need a valid tap-on.',
+  ],
+  checklist: [
+    'Save Trip Planner, Opal/contactless info and your campus address before your first commute.',
+    'Practice one simple trip in daylight before relying on public transport late at night.',
+    'Tap on and tap off with the same card/device every time.',
+    'At ferry wharves, check both the wharf number and destination screen before boarding.',
+  ],
+  links: [
+    GuideLink(
+        label: 'Contactless payments',
+        url: 'https://transportnsw.info/tickets-fares/contactless-payments'),
+    GuideLink(
+        label: 'Ferry routes',
+        url: 'https://transportnsw.info/travel-info/ways-to-get-around/ferry'),
+    GuideLink(
+        label: 'Routes and timetables',
+        url: 'https://transportnsw.info/routes/ferry'),
+    GuideLink(
+        label: 'Fine review guide',
+        url:
+            'https://www.nsw.gov.au/money-and-taxes/fines-and-fees/fines/request-a-review/review-assist-guide/public-transport-offences'),
+  ],
+  attribution:
+      'Images: Wikimedia Commons transport/Circular Quay files. Official transport guidance links open Transport for NSW and NSW Government pages.',
+);
+
+const healthGuideDetail = GuideDetailContent(
+  images: [
+    GuideImage(
+      url:
+          'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=1200&q=80',
+      caption: 'GP clinics are usually the first step for non-emergency care.',
+    ),
+  ],
+  sections: [
+    GuideSection(
+      title: 'GP first, emergency for danger',
+      body:
+          'A GP handles ordinary illness, prescriptions, referrals, test results and ongoing health issues. Emergency departments are for serious or life-threatening symptoms like chest pain, severe breathing trouble, stroke signs, major injury or heavy bleeding.',
+    ),
+    GuideSection(
+      title: 'OSHC and gap payments',
+      body:
+          'OSHC may cover part of the cost, but some clinics charge a gap. Before booking, ask if they accept your OSHC provider, whether you pay upfront, and how claims work.',
+    ),
+  ],
+  warnings: [
+    'Do not wait with severe symptoms because you are worried about cost. Call 000 for emergencies.',
+    'Do not assume every clinic bulk bills international students.',
+  ],
+  checklist: [
+    'Save 000 and healthdirect 1800 022 222.',
+    'Find a nearby GP and pharmacy before you get sick.',
+    'Keep your OSHC card/policy number on your phone.',
+  ],
+  links: [
+    GuideLink(label: 'healthdirect', url: 'https://www.healthdirect.gov.au/'),
+    GuideLink(
+        label: 'OSHC info',
+        url:
+            'https://www.studyaustralia.gov.au/en/plan-your-move/overseas-student-health-cover-oshc'),
+  ],
+);
+
+const housingGuideDetail = GuideDetailContent(
+  images: [
+    GuideImage(
+      url:
+          'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80',
+      caption: 'Inspect rooms carefully before paying rent or bond.',
+    ),
+  ],
+  sections: [
+    GuideSection(
+      title: 'Inspect before paying',
+      body:
+          'Check locks, windows, mould, heating/cooling, internet, kitchen space, laundry, noise and the walk to transport. If you cannot inspect in person, ask for a live video call and written terms.',
+    ),
+    GuideSection(
+      title: 'Bond, bills and house rules',
+      body:
+          'Ask whether bond is lodged properly, what bills are included, how much notice is required, whether guests are allowed, and who else lives there. Keep receipts and screenshots.',
+    ),
+  ],
+  warnings: [
+    'Scammers often pressure you to pay fast before inspection.',
+    'A cheap room can become expensive if transport is unsafe or far away.',
+  ],
+  checklist: [
+    'Inspect or live-video the room.',
+    'Get rent, bond, bills and notice period in writing.',
+    'Photograph room condition on move-in day.',
+  ],
+);
+
+const workGuideDetail = GuideDetailContent(
+  sections: [
+    GuideSection(
+      title: 'Starter jobs',
+      body:
+          'Common first jobs include hospitality, retail, supermarket, warehouse, cleaning, tutoring, campus jobs, call centre and admin. Choose jobs that fit your timetable and commute.',
+    ),
+    GuideSection(
+      title: 'Resume and rights',
+      body:
+          'Use a short Australian-style resume with availability, suburb, skills and experience. Keep records of hours, payslips and messages. Cash work is not an excuse for unsafe or underpaid work.',
+    ),
+  ],
+  warnings: [
+    'Do not hand over passport details casually to unknown employers.',
+    'Be careful with unpaid trial shifts that are actually normal work.',
+  ],
+  checklist: [
+    'Prepare a one-page resume.',
+    'Apply for a TFN through official channels.',
+    'Check minimum pay and keep payslips.',
+  ],
+  links: [
+    GuideLink(
+        label: 'Fair Work students',
+        url:
+            'https://www.fairwork.gov.au/tools-and-resources/fact-sheets/rights-and-obligations/international-students'),
+  ],
+);
+
+const moneyGuideDetail = GuideDetailContent(
+  sections: [
+    GuideSection(
+      title: 'First-month budget',
+      body:
+          'Plan rent, bond, bills, groceries, phone, transport, OSHC/medical gaps, course materials and emergency savings. Track spending for the first month because small Australian costs add up fast.',
+    ),
+    GuideSection(
+      title: 'Banking and scams',
+      body:
+          'Use a reputable bank, keep one-time codes private and never move money for someone else. Government agencies and banks do not demand gift cards or crypto.',
+    ),
+  ],
+  warnings: [
+    'Do not share internet banking passwords or one-time codes.',
+    'Avoid “easy money” transfer jobs. They can be money mule scams.',
+  ],
+  checklist: [
+    'Open a bank account.',
+    'Set a weekly rent/grocery/transport budget.',
+    'Keep a small emergency buffer.',
+  ],
+);
+
+const studyGuideDetail = GuideDetailContent(
+  sections: [
+    GuideSection(
+      title: 'Study admin',
+      body:
+          'Save your timetable, census date, CoE, student card, learning portal, library login and support contacts. Ask student services early when something is confusing.',
+    ),
+    GuideSection(
+      title: 'Academic integrity',
+      body:
+          'Learn referencing, group-work rules and AI policy. Buying assignments or copying text can risk your enrolment and visa plans.',
+    ),
+  ],
+  warnings: [
+    'Do not leave academic help until the night before a deadline.',
+    'Do not assume AI use is allowed just because a tool is available.',
+  ],
+  checklist: [
+    'Create/check your USI if required.',
+    'Find library and academic skills support.',
+    'Save census and assessment dates.',
+  ],
+);
+
+const safetyGuideDetail = GuideDetailContent(
+  sections: [
+    GuideSection(
+      title: 'Emergency basics',
+      body:
+          'Call 000 for police, fire or ambulance emergencies. For crisis support call Lifeline. For domestic or family violence support call 1800RESPECT.',
+    ),
+    GuideSection(
+      title: 'Personal and online safety',
+      body:
+          'Save trusted contacts, avoid isolated late-night routes when possible, and be suspicious of fake landlords, fake employers, bank impersonators and visa threats.',
+    ),
+  ],
+  warnings: [
+    'Government agencies do not demand payment by gift cards or crypto.',
+    'Do not share passport scans unless you know exactly who needs them and why.',
+  ],
+  checklist: [
+    'Save 000, campus security and one trusted local contact.',
+    'Plan the route home before late shifts or events.',
+    'Screenshot suspicious rental or job messages before reporting.',
+  ],
+);
+
+const dailyLifeGuideDetail = GuideDetailContent(
+  sections: [
+    GuideSection(
+      title: 'Everyday systems',
+      body:
+          'Australia has many small systems that locals assume everyone knows: GP appointments, Opal/myki/go cards, rental inspections, payslips, super, TFN, unit pricing, bin days and campus support teams.',
+    ),
+    GuideSection(
+      title: 'Shopping and groceries',
+      body:
+          'Compare supermarkets, local markets and cultural grocery stores. Kmart, Big W, Target, IKEA, Reject Shop and Officeworks are common places for first-room essentials.',
+    ),
+  ],
+  warnings: [
+    'Do not buy every household item before seeing what your room already has.',
+    'Compare unit price, not just package price.',
+  ],
+  checklist: [
+    'Find your nearest supermarket, pharmacy, library and train/bus stop.',
+    'Join one campus or community group.',
+    'Keep a notes list of confusing Australian terms as you learn them.',
+  ],
+);
+
 class GuideItem {
   const GuideItem({
     required this.id,
     required this.title,
     required this.description,
+    this.body = '',
     required this.category,
+    this.rawCategory = '',
+    this.officialUrl = '',
     required this.icon,
   });
 
   final String id;
   final String title;
   final String description;
+  final String body;
   final String category;
+  final String rawCategory;
+  final String officialUrl;
   final IconData icon;
 }
 

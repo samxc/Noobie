@@ -17,6 +17,33 @@ The API is served under `http://127.0.0.1:8091/api/noobie`.
 - `DOMAIN_API_TOKEN`: optional Domain API token. If omitted, rental search returns realistic samples.
 - `OVERPASS_ENDPOINT`: optional Overpass endpoint override for testing/self-hosting.
 
+## Live Rental Data
+
+The backend is already shaped for a real rental feed through
+`/api/noobie/rentals/search`. Keep rental credentials on the backend only; the
+Flutter app should never receive listing API tokens.
+
+Recommended first integration:
+
+1. Create a Domain Developer account and project.
+2. Request/enable access to Agents & Listings with residential listing search.
+3. Store the production access token as `DOMAIN_API_TOKEN` on the VPS.
+4. Smoke test:
+
+   ```sh
+   curl -X POST http://127.0.0.1:8091/api/noobie/rentals/search \
+     -H 'Content-Type: application/json' \
+     -d '{"suburb":"Sydney","max_weekly_rent":420}'
+   ```
+
+5. Verify imported listings include price, address, image, bedrooms, bathrooms,
+   source URL where available, inspection times where available, and safe fallback
+   text when fields are missing.
+
+REA/realestate.com.au is a possible later integration, but it usually requires
+partner onboarding, issued client credentials and customer/agency integrations,
+so Domain is the faster MVP path.
+
 ## Endpoints
 
 - `GET /api/noobie/health`

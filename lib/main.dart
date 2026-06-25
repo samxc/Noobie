@@ -1020,26 +1020,158 @@ class SettlementScore extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const readiness = 0.62;
+
     return Panel(
       dark: true,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 520;
+          final summary = Column(
+            crossAxisAlignment: isCompact
+                ? CrossAxisAlignment.center
+                : CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Move-readiness',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'A quick sense-check for the first few weeks: room, money and support.',
+                textAlign: TextAlign.start,
+                style: TextStyle(color: AppColors.mist, height: 1.35),
+              ),
+              const SizedBox(height: 16),
+              const Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ReadinessPill(label: 'Room checked', value: '72%'),
+                  ReadinessPill(label: 'Budget clear', value: '58%'),
+                  ReadinessPill(label: 'Support found', value: '44%'),
+                ],
+              ),
+              const SizedBox(height: 18),
+              const ReadinessAction(
+                icon: Icons.home_work_outlined,
+                text: 'Confirm bond, bills and lease type before paying.',
+              ),
+              const ReadinessAction(
+                icon: Icons.account_balance_wallet_outlined,
+                text: 'Keep two weeks of rent plus transport money aside.',
+              ),
+              const ReadinessAction(
+                icon: Icons.groups_2_outlined,
+                text: 'Save one campus, community or emergency contact.',
+              ),
+            ],
+          );
+
+          final gauge = const SizedBox(
+            width: 150,
+            height: 150,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 132,
+                  height: 132,
+                  child: CircularProgressIndicator(
+                    value: readiness,
+                    strokeWidth: 12,
+                    strokeCap: StrokeCap.round,
+                    color: AppColors.gold,
+                    backgroundColor: Color(0x33454f4d),
+                  ),
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '62%',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'getting there',
+                      style: TextStyle(
+                        color: AppColors.mist,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+
+          if (isCompact) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                gauge,
+                const SizedBox(height: 18),
+                summary,
+              ],
+            );
+          }
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              gauge,
+              const SizedBox(width: 22),
+              Expanded(child: summary),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class ReadinessPill extends StatelessWidget {
+  const ReadinessPill({super.key, required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'Move-readiness',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                ),
+            value,
+            style: const TextStyle(
+              color: AppColors.gold,
+              fontWeight: FontWeight.w900,
+            ),
           ),
-          const SizedBox(height: 18),
-          const ScoreRow(label: 'Housing safety', value: 0.72),
-          const ScoreRow(label: 'Budget clarity', value: 0.58),
-          const ScoreRow(label: 'Support network', value: 0.44),
-          const SizedBox(height: 8),
-          const Text(
-            'Next version can personalize this from campus, visa type, budget and arrival date.',
-            style: TextStyle(color: AppColors.mist, height: 1.35),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
@@ -1047,27 +1179,26 @@ class SettlementScore extends StatelessWidget {
   }
 }
 
-class ScoreRow extends StatelessWidget {
-  const ScoreRow({super.key, required this.label, required this.value});
+class ReadinessAction extends StatelessWidget {
+  const ReadinessAction({super.key, required this.icon, required this.text});
 
-  final String label;
-  final double value;
+  final IconData icon;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Column(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white)),
-          const SizedBox(height: 6),
-          LinearProgressIndicator(
-            value: value,
-            minHeight: 7,
-            borderRadius: BorderRadius.circular(8),
-            color: AppColors.gold,
-            backgroundColor: Colors.white.withValues(alpha: 0.14),
+          Icon(icon, color: AppColors.gold, size: 18),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(color: AppColors.mist, height: 1.3),
+            ),
           ),
         ],
       ),

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -394,59 +395,71 @@ class WebsiteShell extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: [
-          Material(
-            color: Colors.white,
-            child: SafeArea(
-              bottom: false,
-              child: Container(
-                height: 78,
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                decoration: const BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: Color(0x14000000)),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: AppColors.clay,
-                        borderRadius: BorderRadius.circular(8),
+          ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              child: Material(
+                color: Colors.white.withValues(alpha: 0.82),
+                child: SafeArea(
+                  bottom: false,
+                  child: Container(
+                    height: 78,
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    decoration: BoxDecoration(
+                      border: const Border(
+                        bottom: BorderSide(color: Color(0x14000000)),
                       ),
-                      alignment: Alignment.center,
-                      child: const Text(
-                        'N',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.coal.withValues(alpha: 0.05),
+                          blurRadius: 24,
+                          offset: const Offset(0, 10),
                         ),
-                      ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'Noobie',
-                      style: TextStyle(
-                        color: AppColors.coal,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 24,
-                      ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: AppColors.clay,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          alignment: Alignment.center,
+                          child: const Text(
+                            'N',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Noobie',
+                          style: TextStyle(
+                            color: AppColors.coal,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 34),
+                        for (var i = 0; i < destinations.length; i++)
+                          WebsiteNavButton(
+                            label: destinations[i].label,
+                            selected: selectedIndex == i,
+                            onTap: () => onSelected(i),
+                          ),
+                        const Spacer(),
+                        OutlinedButton.icon(
+                          onPressed: () => onSelected(1),
+                          icon: const Icon(Icons.search),
+                          label: const Text('Find rentals'),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 34),
-                    for (var i = 0; i < destinations.length; i++)
-                      WebsiteNavButton(
-                        label: destinations[i].label,
-                        selected: selectedIndex == i,
-                        onTap: () => onSelected(i),
-                      ),
-                    const Spacer(),
-                    OutlinedButton.icon(
-                      onPressed: () => onSelected(1),
-                      icon: const Icon(Icons.search),
-                      label: const Text('Find rentals'),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -1184,13 +1197,8 @@ class ArrivalSnapshot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.13),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
-      ),
+    return GlassPanel(
+      opacity: 0.14,
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -2824,6 +2832,45 @@ class Panel extends StatelessWidget {
   }
 }
 
+class GlassPanel extends StatelessWidget {
+  const GlassPanel({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(18),
+    this.opacity = 0.15,
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: opacity),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.24)),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.coal.withValues(alpha: 0.18),
+                blurRadius: 24,
+                offset: const Offset(0, 14),
+              ),
+            ],
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
 class PageHeading extends StatelessWidget {
   const PageHeading({super.key, required this.title, required this.subtitle});
 
@@ -2898,13 +2945,9 @@ class MetricChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassPanel(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
-      ),
+      opacity: 0.12,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

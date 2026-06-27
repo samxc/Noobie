@@ -110,6 +110,11 @@ class _NoobieHomeState extends State<NoobieHome> {
 
   @override
   Widget build(BuildContext context) {
+    final guidePagesEnabled = kIsWeb ||
+        defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.linux;
+    final guidePageOpener = guidePagesEnabled ? openGuide : null;
     final pages = [
       OverviewPage(
         saved: saved,
@@ -126,7 +131,7 @@ class _NoobieHomeState extends State<NoobieHome> {
         onBedroomsChanged: (value) => setState(() => bedrooms = value),
         onRentalTypeChanged: (value) => setState(() => rentalType = value),
         onImportRooms: importRooms,
-        onOpenGuide: openGuide,
+        onOpenGuide: guidePageOpener,
       ),
       RoomsPage(
         saved: saved,
@@ -149,14 +154,14 @@ class _NoobieHomeState extends State<NoobieHome> {
         api: api,
         saved: saved,
         onToggleSaved: toggleSaved,
-        onOpenGuide: openGuide,
+        onOpenGuide: guidePageOpener,
       ),
       AssistantPage(api: api),
       SavedPage(
         saved: saved,
         onToggleSaved: toggleSaved,
         listings: listings,
-        onOpenGuide: openGuide,
+        onOpenGuide: guidePageOpener,
       ),
     ];
 
@@ -490,7 +495,7 @@ class OverviewPage extends StatelessWidget {
   final ValueChanged<int> onBedroomsChanged;
   final ValueChanged<String> onRentalTypeChanged;
   final VoidCallback onImportRooms;
-  final ValueChanged<GuideItem> onOpenGuide;
+  final ValueChanged<GuideItem>? onOpenGuide;
 
   @override
   Widget build(BuildContext context) {
@@ -741,7 +746,7 @@ class GuidePage extends StatefulWidget {
   final NoobieApi api;
   final Set<String> saved;
   final ValueChanged<String> onToggleSaved;
-  final ValueChanged<GuideItem> onOpenGuide;
+  final ValueChanged<GuideItem>? onOpenGuide;
 
   @override
   State<GuidePage> createState() => _GuidePageState();
@@ -965,7 +970,7 @@ class SavedPage extends StatelessWidget {
   final Set<String> saved;
   final ValueChanged<String> onToggleSaved;
   final List<RoomListing> listings;
-  final ValueChanged<GuideItem> onOpenGuide;
+  final ValueChanged<GuideItem>? onOpenGuide;
 
   @override
   Widget build(BuildContext context) {
@@ -2080,14 +2085,7 @@ class GuideCard extends StatelessWidget {
       onTap: () {
         final open = onOpenGuide;
         if (open == null) {
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => GuideArticlePage(
-                item: item,
-                onBack: () => Navigator.of(context).pop(),
-              ),
-            ),
-          );
+          showGuideDetail(context, item);
           return;
         }
         open(item);

@@ -31,6 +31,31 @@ class NoobieApp extends StatelessWidget {
           brightness: Brightness.light,
         ),
         scaffoldBackgroundColor: AppColors.paper,
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: AppColors.cloud,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: AppColors.line),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: AppColors.line),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: AppColors.inkBlue, width: 1.4),
+          ),
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.inkBlue,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
         cardTheme: const CardThemeData(
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -1041,69 +1066,178 @@ class HeroPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.network(
-              'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1800&q=80',
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(color: AppColors.coal),
-            ),
-          ),
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [
-                    AppColors.coal.withValues(alpha: 0.92),
-                    AppColors.coal.withValues(alpha: 0.58),
-                    AppColors.coal.withValues(alpha: 0.18),
-                  ],
-                ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 860;
+
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.coal.withValues(alpha: 0.22),
+                blurRadius: 34,
+                offset: const Offset(0, 20),
               ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Image.network(
+                    'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1800&q=80',
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                        Container(color: AppColors.coal),
+                  ),
+                ),
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          AppColors.coal.withValues(alpha: 0.94),
+                          AppColors.coal.withValues(alpha: 0.68),
+                          AppColors.inkBlue.withValues(alpha: 0.28),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.all(wide ? 34 : 28),
+                  child: wide
+                      ? Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Expanded(child: _HeroCopy(wide: wide)),
+                            const SizedBox(width: 26),
+                            const SizedBox(
+                              width: 300,
+                              child: ArrivalSnapshot(),
+                            ),
+                          ],
+                        )
+                      : _HeroCopy(wide: wide),
+                ),
+              ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(28),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 650),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Pill(label: 'Australia arrival companion'),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Land safer, rent smarter, settle faster.',
-                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          height: 0.95,
-                        ),
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    'Noobie turns the messy first months in Australia into a practical plan: official rental searches, suburb sense-checks, inspection notes and student-life guidance.',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.mist,
-                          height: 1.45,
-                        ),
-                  ),
-                  const SizedBox(height: 26),
-                  const Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: [
-                      MetricChip(
-                          value: '4 sites', label: 'rental search links'),
-                      MetricChip(value: '000', label: 'emergency basics'),
-                      MetricChip(value: '7 days', label: 'arrival checklist'),
-                    ],
-                  ),
-                ],
+        );
+      },
+    );
+  }
+}
+
+class _HeroCopy extends StatelessWidget {
+  const _HeroCopy({required this.wide});
+
+  final bool wide;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 680),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Pill(label: 'Australia arrival companion'),
+          SizedBox(height: wide ? 28 : 24),
+          Text(
+            'Land safer, rent smarter, settle faster.',
+            style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  height: 0.95,
+                ),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'Noobie turns the messy first months in Australia into a practical plan: official rental searches, suburb sense-checks, inspection notes and student-life guidance.',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.mist,
+                  height: 1.45,
+                ),
+          ),
+          const SizedBox(height: 26),
+          const Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              MetricChip(value: '4 sites', label: 'rental search links'),
+              MetricChip(value: '000', label: 'emergency basics'),
+              MetricChip(value: '7 days', label: 'arrival checklist'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ArrivalSnapshot extends StatelessWidget {
+  const ArrivalSnapshot({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.13),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'First week focus',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 18,
+            ),
+          ),
+          SizedBox(height: 14),
+          SnapshotStep(
+              icon: Icons.home_work_outlined, text: 'Search rooms legally'),
+          SnapshotStep(
+              icon: Icons.train_outlined, text: 'Check transport after dark'),
+          SnapshotStep(
+              icon: Icons.health_and_safety_outlined,
+              text: 'Save GP and emergency info'),
+        ],
+      ),
+    );
+  }
+}
+
+class SnapshotStep extends StatelessWidget {
+  const SnapshotStep({super.key, required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.gold, size: 19),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: AppColors.mist,
+                fontWeight: FontWeight.w700,
+                height: 1.25,
               ),
             ),
           ),
@@ -1308,37 +1442,52 @@ class RentalSourceGrid extends StatelessWidget {
           ),
           itemBuilder: (context, index) {
             final link = links[index];
-            return OutlinedButton(
-              onPressed: () => openExternal(link.url),
-              style: OutlinedButton.styleFrom(
-                alignment: Alignment.centerLeft,
-                padding: const EdgeInsets.all(14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+            return Material(
+              color: AppColors.cloud,
+              borderRadius: BorderRadius.circular(8),
+              child: InkWell(
+                onTap: () => openExternal(link.url),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.line),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: AppColors.inkBlue.withValues(alpha: 0.11),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        alignment: Alignment.center,
+                        child:
+                            Icon(link.icon, color: AppColors.inkBlue, size: 20),
+                      ),
+                      const SizedBox(height: 9),
+                      Text(
+                        link.label,
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        link.note,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.slate,
+                          fontSize: 12,
+                          height: 1.25,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(link.icon, color: AppColors.inkBlue),
-                  const SizedBox(height: 8),
-                  Text(
-                    link.label,
-                    style: const TextStyle(fontWeight: FontWeight.w900),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    link.note,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.slate,
-                      fontSize: 12,
-                      height: 1.25,
-                    ),
-                  ),
-                ],
               ),
             );
           },
@@ -1364,7 +1513,7 @@ class RentalChecklistGrid extends StatelessWidget {
             crossAxisCount: columns,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            mainAxisExtent: columns == 1 ? 192 : 208,
+            mainAxisExtent: columns == 1 ? 220 : 226,
           ),
           itemBuilder: (context, index) {
             final item = rentalChecklistItems[index];
@@ -1372,8 +1521,17 @@ class RentalChecklistGrid extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(item.icon, color: AppColors.clay),
-                  const SizedBox(height: 10),
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: AppColors.clay.withValues(alpha: 0.11),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(item.icon, color: AppColors.clay),
+                  ),
+                  const SizedBox(height: 12),
                   Text(
                     item.title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -2646,8 +2804,21 @@ class Panel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: dark ? AppColors.coal : Colors.white,
+    return Container(
+      decoration: BoxDecoration(
+        color: dark ? AppColors.coal : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: dark ? Colors.white.withValues(alpha: 0.06) : AppColors.line,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.coal.withValues(alpha: dark ? 0.16 : 0.07),
+            blurRadius: dark ? 28 : 24,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
       child: Padding(padding: const EdgeInsets.all(20), child: child),
     );
   }
@@ -2730,9 +2901,9 @@ class MetricChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
+        color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -2764,8 +2935,9 @@ class Pill extends StatelessWidget {
         vertical: compact ? 6 : 8,
       ),
       decoration: BoxDecoration(
-        color: AppColors.clay,
+        color: AppColors.clay.withValues(alpha: 0.94),
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
       ),
       child: Text(
         label,
@@ -3918,7 +4090,9 @@ class AppColors {
   static const inkBlue = Color(0xff315c73);
   static const clay = Color(0xffb85c44);
   static const gold = Color(0xffd6a84f);
-  static const paper = Color(0xfff4f0e8);
+  static const paper = Color(0xfff5f2ec);
+  static const cloud = Color(0xfff8faf8);
+  static const line = Color(0xffe5ded2);
   static const mist = Color(0xffdbe3df);
   static const slate = Color(0xff65706f);
 }

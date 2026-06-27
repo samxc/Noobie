@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:http/http.dart' as http;
@@ -59,6 +60,7 @@ class _NoobieHomeState extends State<NoobieHome> {
   var rentalType = 'Any';
   var listings = sampleListings;
   var isImporting = false;
+  GuideItem? selectedGuide;
   String? importMessage;
 
   Future<void> importRooms() async {
@@ -98,6 +100,14 @@ class _NoobieHomeState extends State<NoobieHome> {
     });
   }
 
+  void openGuide(GuideItem item) {
+    setState(() => selectedGuide = item);
+  }
+
+  void closeGuide() {
+    setState(() => selectedGuide = null);
+  }
+
   @override
   Widget build(BuildContext context) {
     final pages = [
@@ -116,6 +126,7 @@ class _NoobieHomeState extends State<NoobieHome> {
         onBedroomsChanged: (value) => setState(() => bedrooms = value),
         onRentalTypeChanged: (value) => setState(() => rentalType = value),
         onImportRooms: importRooms,
+        onOpenGuide: openGuide,
       ),
       RoomsPage(
         saved: saved,
@@ -134,14 +145,27 @@ class _NoobieHomeState extends State<NoobieHome> {
         onImportRooms: importRooms,
       ),
       PlacesPage(api: api, saved: saved, onToggleSaved: toggleSaved),
-      GuidePage(api: api, saved: saved, onToggleSaved: toggleSaved),
+      GuidePage(
+        api: api,
+        saved: saved,
+        onToggleSaved: toggleSaved,
+        onOpenGuide: openGuide,
+      ),
       AssistantPage(api: api),
-      SavedPage(saved: saved, onToggleSaved: toggleSaved, listings: listings),
+      SavedPage(
+        saved: saved,
+        onToggleSaved: toggleSaved,
+        listings: listings,
+        onOpenGuide: openGuide,
+      ),
     ];
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 920;
+        final content = selectedGuide == null
+            ? pages[selectedIndex]
+            : GuideArticlePage(item: selectedGuide!, onBack: closeGuide);
         final navItems = [
           const Destination(Icons.space_dashboard_outlined, 'Home'),
           const Destination(Icons.apartment_outlined, 'Rooms'),
@@ -151,6 +175,18 @@ class _NoobieHomeState extends State<NoobieHome> {
           const Destination(Icons.bookmark_border, 'Saved'),
         ];
 
+        if (kIsWeb && wide) {
+          return WebsiteShell(
+            selectedIndex: selectedGuide == null ? selectedIndex : 3,
+            destinations: navItems,
+            onSelected: (value) => setState(() {
+              selectedGuide = null;
+              selectedIndex = value;
+            }),
+            child: content,
+          );
+        }
+
         return Scaffold(
           body: Row(
             children: [
@@ -158,9 +194,12 @@ class _NoobieHomeState extends State<NoobieHome> {
                 SideNav(
                   selectedIndex: selectedIndex,
                   destinations: navItems,
-                  onSelected: (value) => setState(() => selectedIndex = value),
+                  onSelected: (value) => setState(() {
+                    selectedGuide = null;
+                    selectedIndex = value;
+                  }),
                 ),
-              Expanded(child: pages[selectedIndex]),
+              Expanded(child: content),
             ],
           ),
           bottomNavigationBar: wide
@@ -168,7 +207,10 @@ class _NoobieHomeState extends State<NoobieHome> {
               : NavigationBar(
                   selectedIndex: selectedIndex,
                   onDestinationSelected: (value) {
-                    setState(() => selectedIndex = value);
+                    setState(() {
+                      selectedGuide = null;
+                      selectedIndex = value;
+                    });
                   },
                   destinations: [
                     for (final item in navItems)
@@ -303,6 +345,117 @@ class NavButton extends StatelessWidget {
   }
 }
 
+class WebsiteShell extends StatelessWidget {
+  const WebsiteShell({
+    super.key,
+    required this.selectedIndex,
+    required this.destinations,
+    required this.onSelected,
+    required this.child,
+  });
+
+  final int selectedIndex;
+  final List<Destination> destinations;
+  final ValueChanged<int> onSelected;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(
+        children: [
+          Material(
+            color: Colors.white,
+            child: SafeArea(
+              bottom: false,
+              child: Container(
+                height: 78,
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                decoration: const BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: Color(0x14000000)),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: AppColors.clay,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Text(
+                        'N',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Noobie',
+                      style: TextStyle(
+                        color: AppColors.coal,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 34),
+                    for (var i = 0; i < destinations.length; i++)
+                      WebsiteNavButton(
+                        label: destinations[i].label,
+                        selected: selectedIndex == i,
+                        onTap: () => onSelected(i),
+                      ),
+                    const Spacer(),
+                    OutlinedButton.icon(
+                      onPressed: () => onSelected(1),
+                      icon: const Icon(Icons.search),
+                      label: const Text('Find rentals'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Expanded(child: child),
+        ],
+      ),
+    );
+  }
+}
+
+class WebsiteNavButton extends StatelessWidget {
+  const WebsiteNavButton({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: TextButton(
+        onPressed: onTap,
+        style: TextButton.styleFrom(
+          foregroundColor: selected ? AppColors.clay : AppColors.coal,
+          textStyle: const TextStyle(fontWeight: FontWeight.w800),
+        ),
+        child: Text(label),
+      ),
+    );
+  }
+}
+
 class OverviewPage extends StatelessWidget {
   const OverviewPage({
     super.key,
@@ -320,6 +473,7 @@ class OverviewPage extends StatelessWidget {
     required this.onBedroomsChanged,
     required this.onRentalTypeChanged,
     required this.onImportRooms,
+    required this.onOpenGuide,
   });
 
   final Set<String> saved;
@@ -336,6 +490,7 @@ class OverviewPage extends StatelessWidget {
   final ValueChanged<int> onBedroomsChanged;
   final ValueChanged<String> onRentalTypeChanged;
   final VoidCallback onImportRooms;
+  final ValueChanged<GuideItem> onOpenGuide;
 
   @override
   Widget build(BuildContext context) {
@@ -395,6 +550,7 @@ class OverviewPage extends StatelessWidget {
           items: guideItems.take(4).toList(),
           saved: saved,
           onToggleSaved: onToggleSaved,
+          onOpenGuide: onOpenGuide,
         ),
       ],
     );
@@ -579,11 +735,13 @@ class GuidePage extends StatefulWidget {
     required this.api,
     required this.saved,
     required this.onToggleSaved,
+    required this.onOpenGuide,
   });
 
   final NoobieApi api;
   final Set<String> saved;
   final ValueChanged<String> onToggleSaved;
+  final ValueChanged<GuideItem> onOpenGuide;
 
   @override
   State<GuidePage> createState() => _GuidePageState();
@@ -662,7 +820,8 @@ class _GuidePageState extends State<GuidePage> {
         ActionGrid(
             items: guides,
             saved: widget.saved,
-            onToggleSaved: widget.onToggleSaved),
+            onToggleSaved: widget.onToggleSaved,
+            onOpenGuide: widget.onOpenGuide),
       ],
     );
   }
@@ -800,11 +959,13 @@ class SavedPage extends StatelessWidget {
     required this.saved,
     required this.onToggleSaved,
     required this.listings,
+    required this.onOpenGuide,
   });
 
   final Set<String> saved;
   final ValueChanged<String> onToggleSaved;
   final List<RoomListing> listings;
+  final ValueChanged<GuideItem> onOpenGuide;
 
   @override
   Widget build(BuildContext context) {
@@ -830,7 +991,11 @@ class SavedPage extends StatelessWidget {
           ),
         if (savedGuides.isNotEmpty)
           ActionGrid(
-              items: savedGuides, saved: saved, onToggleSaved: onToggleSaved),
+            items: savedGuides,
+            saved: saved,
+            onToggleSaved: onToggleSaved,
+            onOpenGuide: onOpenGuide,
+          ),
       ],
     );
   }
@@ -916,7 +1081,7 @@ class HeroPanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 18),
                   Text(
-                    'Noobie turns the messy first months in Australia into a practical plan: live rental imports, suburb sense-checks, inspection notes and student-life guidance.',
+                    'Noobie turns the messy first months in Australia into a practical plan: official rental searches, suburb sense-checks, inspection notes and student-life guidance.',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: AppColors.mist,
                           height: 1.45,
@@ -927,7 +1092,8 @@ class HeroPanel extends StatelessWidget {
                     spacing: 10,
                     runSpacing: 10,
                     children: [
-                      MetricChip(value: 'Domain', label: 'rental import ready'),
+                      MetricChip(
+                          value: '4 sites', label: 'rental search links'),
                       MetricChip(value: '000', label: 'emergency basics'),
                       MetricChip(value: '7 days', label: 'arrival checklist'),
                     ],
@@ -1850,11 +2016,13 @@ class ActionGrid extends StatelessWidget {
     required this.items,
     required this.saved,
     required this.onToggleSaved,
+    this.onOpenGuide,
   });
 
   final List<GuideItem> items;
   final Set<String> saved;
   final ValueChanged<String> onToggleSaved;
+  final ValueChanged<GuideItem>? onOpenGuide;
 
   @override
   Widget build(BuildContext context) {
@@ -1882,6 +2050,7 @@ class ActionGrid extends StatelessWidget {
               item: item,
               saved: saved.contains(item.id),
               onToggleSaved: onToggleSaved,
+              onOpenGuide: onOpenGuide,
             );
           },
         );
@@ -1896,17 +2065,33 @@ class GuideCard extends StatelessWidget {
     required this.item,
     required this.saved,
     required this.onToggleSaved,
+    this.onOpenGuide,
   });
 
   final GuideItem item;
   final bool saved;
   final ValueChanged<String> onToggleSaved;
+  final ValueChanged<GuideItem>? onOpenGuide;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       borderRadius: BorderRadius.circular(8),
-      onTap: () => showGuideDetail(context, item),
+      onTap: () {
+        final open = onOpenGuide;
+        if (open == null) {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => GuideArticlePage(
+                item: item,
+                onBack: () => Navigator.of(context).pop(),
+              ),
+            ),
+          );
+          return;
+        }
+        open(item);
+      },
       child: Panel(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1969,6 +2154,231 @@ Future<void> showGuideDetail(BuildContext context, GuideItem item) {
     ),
     builder: (_) => GuideDetailSheet(item: item),
   );
+}
+
+class GuideArticlePage extends StatefulWidget {
+  const GuideArticlePage({super.key, required this.item, required this.onBack});
+
+  final GuideItem item;
+  final VoidCallback onBack;
+
+  @override
+  State<GuideArticlePage> createState() => _GuideArticlePageState();
+}
+
+class _GuideArticlePageState extends State<GuideArticlePage> {
+  final FlutterTts tts = FlutterTts();
+  var speaking = false;
+
+  GuideDetailContent get detail => guideDetailFor(widget.item);
+
+  @override
+  void initState() {
+    super.initState();
+    tts.setCompletionHandler(() {
+      if (mounted) setState(() => speaking = false);
+    });
+    tts.setCancelHandler(() {
+      if (mounted) setState(() => speaking = false);
+    });
+  }
+
+  @override
+  void dispose() {
+    tts.stop();
+    super.dispose();
+  }
+
+  Future<void> toggleSpeech() async {
+    if (speaking) {
+      await tts.stop();
+      setState(() => speaking = false);
+      return;
+    }
+    await tts.setLanguage('en-AU');
+    await tts.setSpeechRate(0.45);
+    await tts.speak(detail.speechText(widget.item));
+    setState(() => speaking = true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+
+    return AppPage(
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: widget.onBack,
+            icon: const Icon(Icons.arrow_back),
+            label: const Text('Back to guides'),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Panel(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final wide = constraints.maxWidth >= 820;
+              final heading = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(item.icon, color: AppColors.clay),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          item.category,
+                          style: const TextStyle(
+                            color: AppColors.inkBlue,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    item.title,
+                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                          color: AppColors.coal,
+                          fontWeight: FontWeight.w900,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    item.description,
+                    style: const TextStyle(
+                      color: AppColors.slate,
+                      height: 1.45,
+                      fontSize: 17,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      FilledButton.icon(
+                        onPressed: toggleSpeech,
+                        icon: Icon(
+                            speaking ? Icons.stop : Icons.volume_up_outlined),
+                        label: Text(speaking ? 'Stop listening' : 'Listen'),
+                      ),
+                      if (item.officialUrl.isNotEmpty)
+                        OutlinedButton.icon(
+                          onPressed: () => openExternal(item.officialUrl),
+                          icon: const Icon(Icons.verified_outlined),
+                          label: const Text('Official source'),
+                        ),
+                    ],
+                  ),
+                ],
+              );
+
+              final image = detail.images.isEmpty
+                  ? const SizedBox.shrink()
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: AspectRatio(
+                        aspectRatio: 16 / 10,
+                        child: Image.network(
+                          detail.images.first.url,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              Container(color: AppColors.mist),
+                        ),
+                      ),
+                    );
+
+              return wide
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 6, child: heading),
+                        const SizedBox(width: 28),
+                        Expanded(flex: 4, child: image),
+                      ],
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        heading,
+                        if (detail.images.isNotEmpty) ...[
+                          const SizedBox(height: 18),
+                          image,
+                        ],
+                      ],
+                    );
+            },
+          ),
+        ),
+        if (item.body.isNotEmpty) ...[
+          const SectionTitle(title: 'What this means'),
+          DetailBlock(text: item.body),
+        ],
+        if (detail.images.length > 1) ...[
+          const SectionTitle(title: 'What it looks like'),
+          DetailImageStrip(images: detail.images.skip(1).toList()),
+        ],
+        for (final section in detail.sections) ...[
+          SectionTitle(title: section.title),
+          DetailBlock(text: section.body),
+        ],
+        if (detail.warnings.isNotEmpty) ...[
+          const SectionTitle(title: 'Common mistakes'),
+          Panel(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final warning in detail.warnings)
+                  DetailBullet(
+                      icon: Icons.warning_amber_outlined, text: warning),
+              ],
+            ),
+          ),
+        ],
+        if (detail.checklist.isNotEmpty) ...[
+          const SectionTitle(title: 'Do this'),
+          Panel(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final step in detail.checklist)
+                  DetailBullet(icon: Icons.check_circle_outline, text: step),
+              ],
+            ),
+          ),
+        ],
+        if (detail.links.isNotEmpty) ...[
+          const SectionTitle(title: 'Useful links'),
+          Panel(
+            child: Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                for (final link in detail.links)
+                  OutlinedButton.icon(
+                    onPressed: () => openExternal(link.url),
+                    icon: const Icon(Icons.open_in_new),
+                    label: Text(link.label),
+                  ),
+              ],
+            ),
+          ),
+        ],
+        if (detail.attribution.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          Text(
+            detail.attribution,
+            style: const TextStyle(
+                color: AppColors.slate, fontSize: 12, height: 1.35),
+          ),
+        ],
+      ],
+    );
+  }
 }
 
 class GuideDetailSheet extends StatefulWidget {

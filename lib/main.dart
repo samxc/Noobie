@@ -588,13 +588,8 @@ class OverviewPage extends StatelessWidget {
           action: const Text('before you apply'),
         ),
         const RentalChecklistGrid(),
-        const SectionTitle(title: 'Arrival playbook'),
-        ActionGrid(
-          items: guideItems.take(4).toList(),
-          saved: saved,
-          onToggleSaved: onToggleSaved,
-          onOpenGuide: onOpenGuide,
-        ),
+        const SectionTitle(title: 'Start here'),
+        const HomeStepGrid(),
       ],
     );
   }
@@ -1549,6 +1544,65 @@ class RentalChecklistGrid extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     item.body,
+                    style: const TextStyle(
+                      color: AppColors.slate,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class HomeStepGrid extends StatelessWidget {
+  const HomeStepGrid({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 860 ? 3 : 1;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: homeSteps.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            mainAxisExtent: columns == 1 ? 206 : 198,
+          ),
+          itemBuilder: (context, index) {
+            final step = homeSteps[index];
+            return Panel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: step.color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(step.icon, color: step.color),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    step.title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    step.body,
                     style: const TextStyle(
                       color: AppColors.slate,
                       height: 1.35,
@@ -3284,6 +3338,20 @@ class RentalChecklistItem {
   final String body;
 }
 
+class HomeStep {
+  const HomeStep({
+    required this.icon,
+    required this.title,
+    required this.body,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+  final Color color;
+}
+
 class AppPlace {
   const AppPlace({
     required this.id,
@@ -3942,6 +4010,30 @@ const rentalChecklistItems = [
     title: 'Inspect the basics',
     body:
         'Check locks, windows, mould, pests, smoke alarms, street lighting, transport after dark and whether the room matches the listing.',
+  ),
+];
+
+const homeSteps = [
+  HomeStep(
+    icon: Icons.travel_explore,
+    title: 'Search rentals safely',
+    body:
+        'Start with official search links, then compare location, transport, rent and inspection risks before applying.',
+    color: AppColors.inkBlue,
+  ),
+  HomeStep(
+    icon: Icons.map_outlined,
+    title: 'Check nearby essentials',
+    body:
+        'Find groceries, transport, health services and everyday places around the suburb you are considering.',
+    color: AppColors.clay,
+  ),
+  HomeStep(
+    icon: Icons.local_library_outlined,
+    title: 'Read the full guide',
+    body:
+        'Use the Guide section for deeper articles on GP visits, transport, scams, work, banking and student life.',
+    color: AppColors.gold,
   ),
 ];
 

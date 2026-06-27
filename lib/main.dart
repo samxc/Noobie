@@ -55,6 +55,8 @@ class _NoobieHomeState extends State<NoobieHome> {
   var selectedIndex = 0;
   var city = 'Sydney';
   var maxRent = 420.0;
+  var bedrooms = 1;
+  var rentalType = 'Any';
   var listings = sampleListings;
   var isImporting = false;
   String? importMessage;
@@ -107,8 +109,12 @@ class _NoobieHomeState extends State<NoobieHome> {
         city: city,
         maxRent: maxRent,
         isImporting: isImporting,
+        bedrooms: bedrooms,
+        rentalType: rentalType,
         onCityChanged: (value) => setState(() => city = value),
         onRentChanged: (value) => setState(() => maxRent = value),
+        onBedroomsChanged: (value) => setState(() => bedrooms = value),
+        onRentalTypeChanged: (value) => setState(() => rentalType = value),
         onImportRooms: importRooms,
       ),
       RoomsPage(
@@ -119,8 +125,12 @@ class _NoobieHomeState extends State<NoobieHome> {
         city: city,
         maxRent: maxRent,
         isImporting: isImporting,
+        bedrooms: bedrooms,
+        rentalType: rentalType,
         onCityChanged: (value) => setState(() => city = value),
         onRentChanged: (value) => setState(() => maxRent = value),
+        onBedroomsChanged: (value) => setState(() => bedrooms = value),
+        onRentalTypeChanged: (value) => setState(() => rentalType = value),
         onImportRooms: importRooms,
       ),
       PlacesPage(api: api, saved: saved, onToggleSaved: toggleSaved),
@@ -303,8 +313,12 @@ class OverviewPage extends StatelessWidget {
     required this.city,
     required this.maxRent,
     required this.isImporting,
+    required this.bedrooms,
+    required this.rentalType,
     required this.onCityChanged,
     required this.onRentChanged,
+    required this.onBedroomsChanged,
+    required this.onRentalTypeChanged,
     required this.onImportRooms,
   });
 
@@ -315,8 +329,12 @@ class OverviewPage extends StatelessWidget {
   final String city;
   final double maxRent;
   final bool isImporting;
+  final int bedrooms;
+  final String rentalType;
   final ValueChanged<String> onCityChanged;
   final ValueChanged<double> onRentChanged;
+  final ValueChanged<int> onBedroomsChanged;
+  final ValueChanged<String> onRentalTypeChanged;
   final VoidCallback onImportRooms;
 
   @override
@@ -331,13 +349,19 @@ class OverviewPage extends StatelessWidget {
             final children = [
               Expanded(
                 flex: wide ? 7 : 0,
-                child: RoomImportPanel(
+                child: RentalSearchPanel(
+                  saved: saved,
                   city: city,
                   maxRent: maxRent,
+                  bedrooms: bedrooms,
+                  rentalType: rentalType,
                   importMessage: importMessage,
                   isImporting: isImporting,
+                  onToggleSaved: onToggleSaved,
                   onCityChanged: onCityChanged,
                   onRentChanged: onRentChanged,
+                  onBedroomsChanged: onBedroomsChanged,
+                  onRentalTypeChanged: onRentalTypeChanged,
                   onImportRooms: onImportRooms,
                 ),
               ),
@@ -362,14 +386,10 @@ class OverviewPage extends StatelessWidget {
           },
         ),
         SectionTitle(
-          title: 'Rooms worth inspecting',
-          action: Text('${listings.length} matches'),
+          title: 'Rental safety checklist',
+          action: const Text('before you apply'),
         ),
-        ListingStrip(
-          listings: listings.take(3).toList(),
-          saved: saved,
-          onToggleSaved: onToggleSaved,
-        ),
+        const RentalChecklistGrid(),
         const SectionTitle(title: 'Arrival playbook'),
         ActionGrid(
           items: guideItems.take(4).toList(),
@@ -391,8 +411,12 @@ class RoomsPage extends StatelessWidget {
     required this.city,
     required this.maxRent,
     required this.isImporting,
+    required this.bedrooms,
+    required this.rentalType,
     required this.onCityChanged,
     required this.onRentChanged,
+    required this.onBedroomsChanged,
+    required this.onRentalTypeChanged,
     required this.onImportRooms,
   });
 
@@ -403,8 +427,12 @@ class RoomsPage extends StatelessWidget {
   final String city;
   final double maxRent;
   final bool isImporting;
+  final int bedrooms;
+  final String rentalType;
   final ValueChanged<String> onCityChanged;
   final ValueChanged<double> onRentChanged;
+  final ValueChanged<int> onBedroomsChanged;
+  final ValueChanged<String> onRentalTypeChanged;
   final VoidCallback onImportRooms;
 
   @override
@@ -414,20 +442,31 @@ class RoomsPage extends StatelessWidget {
         PageHeading(
           title: 'Room Search',
           subtitle:
-              'Import rentals, compare the practical details and save inspections before paying a dollar.',
+              'Launch real searches on Australian rental sites, then use Noobie to inspect safely before paying a dollar.',
         ),
-        RoomImportPanel(
+        RentalSearchPanel(
+          saved: saved,
           city: city,
           maxRent: maxRent,
+          bedrooms: bedrooms,
+          rentalType: rentalType,
           importMessage: importMessage,
           isImporting: isImporting,
+          onToggleSaved: onToggleSaved,
           onCityChanged: onCityChanged,
           onRentChanged: onRentChanged,
+          onBedroomsChanged: onBedroomsChanged,
+          onRentalTypeChanged: onRentalTypeChanged,
           onImportRooms: onImportRooms,
         ),
-        SectionTitle(title: 'Imported and curated rooms'),
+        const SectionTitle(title: 'Before you apply'),
+        const RentalChecklistGrid(),
+        const SectionTitle(title: 'When official API access is approved'),
         ListingGrid(
-            listings: listings, saved: saved, onToggleSaved: onToggleSaved),
+          listings: listings,
+          saved: saved,
+          onToggleSaved: onToggleSaved,
+        ),
       ],
     );
   }
@@ -903,47 +942,76 @@ class HeroPanel extends StatelessWidget {
   }
 }
 
-class RoomImportPanel extends StatelessWidget {
-  const RoomImportPanel({
+class RentalSearchPanel extends StatelessWidget {
+  const RentalSearchPanel({
     super.key,
+    required this.saved,
     required this.city,
     required this.maxRent,
+    required this.bedrooms,
+    required this.rentalType,
     required this.importMessage,
     required this.isImporting,
+    required this.onToggleSaved,
     required this.onCityChanged,
     required this.onRentChanged,
+    required this.onBedroomsChanged,
+    required this.onRentalTypeChanged,
     required this.onImportRooms,
   });
 
+  final Set<String> saved;
   final String city;
   final double maxRent;
+  final int bedrooms;
+  final String rentalType;
   final String? importMessage;
   final bool isImporting;
+  final ValueChanged<String> onToggleSaved;
   final ValueChanged<String> onCityChanged;
   final ValueChanged<double> onRentChanged;
+  final ValueChanged<int> onBedroomsChanged;
+  final ValueChanged<String> onRentalTypeChanged;
   final VoidCallback onImportRooms;
 
   @override
   Widget build(BuildContext context) {
+    final search = RentalSearch(
+      city: city,
+      maxRent: maxRent.round(),
+      bedrooms: bedrooms,
+      rentalType: rentalType,
+    );
+    final links = rentalSearchLinks(search);
+    final savedId = search.savedId;
+    final isSaved = saved.contains(savedId);
+
     return Panel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.sync_alt, color: AppColors.inkBlue),
+              const Icon(Icons.travel_explore, color: AppColors.inkBlue),
               const SizedBox(width: 10),
-              Text(
-                'Rental Import',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+              Expanded(
+                child: Text(
+                  'Real rental search',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+              ),
+              IconButton.filledTonal(
+                tooltip: isSaved ? 'Remove saved search' : 'Save this search',
+                onPressed: () => onToggleSaved(savedId),
+                icon: Icon(isSaved ? Icons.bookmark : Icons.bookmark_border),
               ),
             ],
           ),
           const SizedBox(height: 10),
           const Text(
-            'Connect Domain API credentials to pull live rentals. Without a token, Noobie shows realistic sample listings so the product can still be reviewed.',
+            'Noobie opens official rental websites with your filters, then helps you inspect safely. We do not copy listings until an approved API is connected.',
             style: TextStyle(color: AppColors.slate, height: 1.35),
           ),
           const SizedBox(height: 18),
@@ -976,6 +1044,46 @@ class RoomImportPanel extends StatelessWidget {
                 ),
               ),
               SizedBox(
+                width: 160,
+                child: DropdownButtonFormField<int>(
+                  initialValue: bedrooms,
+                  decoration: const InputDecoration(
+                    labelText: 'Bedrooms',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 0, child: Text('Any')),
+                    DropdownMenuItem(value: 1, child: Text('1+')),
+                    DropdownMenuItem(value: 2, child: Text('2+')),
+                    DropdownMenuItem(value: 3, child: Text('3+')),
+                    DropdownMenuItem(value: 4, child: Text('4+')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) onBedroomsChanged(value);
+                  },
+                ),
+              ),
+              SizedBox(
+                width: 220,
+                child: DropdownButtonFormField<String>(
+                  initialValue: rentalType,
+                  decoration: const InputDecoration(
+                    labelText: 'Type',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'Any', child: Text('Any')),
+                    DropdownMenuItem(value: 'Room', child: Text('Room')),
+                    DropdownMenuItem(
+                        value: 'Apartment', child: Text('Apartment')),
+                    DropdownMenuItem(value: 'House', child: Text('House')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) onRentalTypeChanged(value);
+                  },
+                ),
+              ),
+              SizedBox(
                 width: 260,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -992,25 +1100,129 @@ class RoomImportPanel extends StatelessWidget {
                   ],
                 ),
               ),
-              FilledButton.icon(
-                onPressed: isImporting ? null : onImportRooms,
-                icon: isImporting
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.cloud_download_outlined),
-                label: Text(isImporting ? 'Importing' : 'Import rooms'),
-              ),
             ],
           ),
-          if (importMessage != null) ...[
-            const SizedBox(height: 14),
-            StatusNote(text: importMessage!),
-          ],
+          const SizedBox(height: 18),
+          RentalSourceGrid(links: links),
+          const SizedBox(height: 14),
+          StatusNote(
+            text:
+                'Saved search: ${search.city}, up to \$${search.maxRent}/week, ${search.bedroomsLabel.toLowerCase()}, ${search.rentalType.toLowerCase()}.',
+          ),
         ],
       ),
+    );
+  }
+}
+
+class RentalSourceGrid extends StatelessWidget {
+  const RentalSourceGrid({super.key, required this.links});
+
+  final List<RentalSearchLink> links;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 760 ? 4 : 2;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: links.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            mainAxisExtent: 118,
+          ),
+          itemBuilder: (context, index) {
+            final link = links[index];
+            return OutlinedButton(
+              onPressed: () => openExternal(link.url),
+              style: OutlinedButton.styleFrom(
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.all(14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(link.icon, color: AppColors.inkBlue),
+                  const SizedBox(height: 8),
+                  Text(
+                    link.label,
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    link.note,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.slate,
+                      fontSize: 12,
+                      height: 1.25,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class RentalChecklistGrid extends StatelessWidget {
+  const RentalChecklistGrid({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 860 ? 3 : 1;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: rentalChecklistItems.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            mainAxisExtent: columns == 1 ? 192 : 208,
+          ),
+          itemBuilder: (context, index) {
+            final item = rentalChecklistItems[index];
+            return Panel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(item.icon, color: AppColors.clay),
+                  const SizedBox(height: 10),
+                  Text(
+                    item.title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    item.body,
+                    style: const TextStyle(
+                      color: AppColors.slate,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -2079,15 +2291,20 @@ class SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.only(top: 28, bottom: 12),
       child: Row(
         children: [
-          Text(
-            title,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.coal,
-                ),
+          Expanded(
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.coal,
+                  ),
+            ),
           ),
-          const Spacer(),
-          if (action != null) action!,
+          if (action != null) ...[
+            const SizedBox(width: 12),
+            Flexible(
+                child: Align(alignment: Alignment.centerRight, child: action!)),
+          ],
         ],
       ),
     );
@@ -2383,6 +2600,65 @@ class RoomListing {
       source: '${item['source'] ?? 'Backend'}',
     );
   }
+}
+
+class RentalSearch {
+  const RentalSearch({
+    required this.city,
+    required this.maxRent,
+    required this.bedrooms,
+    required this.rentalType,
+  });
+
+  final String city;
+  final int maxRent;
+  final int bedrooms;
+  final String rentalType;
+
+  RentalCityMeta get meta => rentalCityMeta[city] ?? rentalCityMeta['Sydney']!;
+
+  String get bedroomsLabel => bedrooms <= 0 ? 'Any bedrooms' : '$bedrooms+ bed';
+
+  String get savedId =>
+      'rental-search:${city.toLowerCase()}:$maxRent:$bedrooms:$rentalType';
+}
+
+class RentalSearchLink {
+  const RentalSearchLink({
+    required this.label,
+    required this.note,
+    required this.url,
+    required this.icon,
+  });
+
+  final String label;
+  final String note;
+  final String url;
+  final IconData icon;
+}
+
+class RentalCityMeta {
+  const RentalCityMeta({
+    required this.state,
+    required this.postcode,
+    required this.slug,
+  });
+
+  final String state;
+  final String postcode;
+  final String slug;
+}
+
+class RentalChecklistItem {
+  const RentalChecklistItem({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
 }
 
 class AppPlace {
@@ -2963,6 +3239,88 @@ const placeCategoryOptions = {
   'fun': 'Fun & Travel',
   'community': 'Community',
 };
+
+const rentalCityMeta = {
+  'Sydney': RentalCityMeta(state: 'NSW', postcode: '2000', slug: 'sydney'),
+  'Parramatta':
+      RentalCityMeta(state: 'NSW', postcode: '2150', slug: 'parramatta'),
+  'Melbourne':
+      RentalCityMeta(state: 'VIC', postcode: '3000', slug: 'melbourne'),
+  'Brisbane': RentalCityMeta(state: 'QLD', postcode: '4000', slug: 'brisbane'),
+  'Canberra': RentalCityMeta(state: 'ACT', postcode: '2600', slug: 'canberra'),
+  'Adelaide': RentalCityMeta(state: 'SA', postcode: '5000', slug: 'adelaide'),
+  'Perth': RentalCityMeta(state: 'WA', postcode: '6000', slug: 'perth'),
+  'Hobart': RentalCityMeta(state: 'TAS', postcode: '7000', slug: 'hobart'),
+  'Darwin': RentalCityMeta(state: 'NT', postcode: '0800', slug: 'darwin'),
+};
+
+List<RentalSearchLink> rentalSearchLinks(RentalSearch search) {
+  final meta = search.meta;
+  final state = meta.state.toLowerCase();
+  final bedrooms = search.bedrooms <= 0 ? null : '${search.bedrooms}';
+  final domainPath = '/rent/${meta.slug}-$state-${meta.postcode}/';
+  final reaPath = '/rent/in-${meta.slug},+$state/list-1';
+  final flatmatesPath = '/rooms/${meta.slug}-${meta.postcode}';
+  final gumtreeQuery =
+      '${search.city} ${meta.state} rent ${search.rentalType == 'Any' ? '' : search.rentalType}'
+          .trim();
+  final encodedGumtreeQuery = Uri.encodeComponent(gumtreeQuery);
+
+  return [
+    RentalSearchLink(
+      label: 'Domain',
+      note: 'Official rental listings',
+      icon: Icons.apartment_outlined,
+      url: Uri.https('www.domain.com.au', domainPath, {
+        'price': '0-${search.maxRent}',
+        if (bedrooms != null) 'bedrooms': bedrooms,
+      }).toString(),
+    ),
+    RentalSearchLink(
+      label: 'realestate.com.au',
+      note: 'Open official REA search',
+      icon: Icons.home_work_outlined,
+      url:
+          'https://www.realestate.com.au$reaPath?maxPrice=${search.maxRent}${bedrooms == null ? '' : '&numBedrooms=$bedrooms'}',
+    ),
+    RentalSearchLink(
+      label: 'Flatmates',
+      note: 'Rooms and sharehouses',
+      icon: Icons.groups_2_outlined,
+      url: Uri.https('flatmates.com.au', flatmatesPath, {
+        'priceMax': '${search.maxRent}',
+      }).toString(),
+    ),
+    RentalSearchLink(
+      label: 'Gumtree',
+      note: 'Private rooms and rentals',
+      icon: Icons.manage_search_outlined,
+      url:
+          'https://www.gumtree.com.au/s-real-estate/$encodedGumtreeQuery/k0c9296?price__to=${search.maxRent}',
+    ),
+  ];
+}
+
+const rentalChecklistItems = [
+  RentalChecklistItem(
+    icon: Icons.verified_user_outlined,
+    title: 'Verify before paying',
+    body:
+        'Do not pay bond or advance rent before inspecting, checking the address and understanding whether it is a lease, sublease or boarding arrangement.',
+  ),
+  RentalChecklistItem(
+    icon: Icons.receipt_long_outlined,
+    title: 'Get costs in writing',
+    body:
+        'Ask what is included: electricity, gas, internet, water, furniture, parking and notice period. Keep receipts and screenshots.',
+  ),
+  RentalChecklistItem(
+    icon: Icons.health_and_safety_outlined,
+    title: 'Inspect the basics',
+    body:
+        'Check locks, windows, mould, pests, smoke alarms, street lighting, transport after dark and whether the room matches the listing.',
+  ),
+];
 
 const fallbackRoomImage =
     'https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&w=1200&q=80';

@@ -7,7 +7,7 @@ void main() {
 
     expect(
         find.text('Land safer, rent smarter, settle faster.'), findsOneWidget);
-    expect(find.text('Rental Import'), findsOneWidget);
-    expect(find.text('Rooms worth inspecting'), findsOneWidget);
+    expect(find.text('Real rental search'), findsOneWidget);
+    expect(find.text('Rental safety checklist'), findsOneWidget);
   });
 }
